@@ -4,17 +4,36 @@ import requests
 from bs4 import BeautifulSoup
 
 import time
+import pandas as pd
+import json
 
 import streamlit as st
+import winsound
 
-from playsound import playsound
+import pyttsx3
+from io import StringIO
+
+
+
+
+def alert_user(symbol):
+    """Play a beep sound alert and read the stock symbol out loud."""
+    # Play a beep sound
+    frequency = 1000  # Hertz
+    duration = 500  # Milliseconds
+    winsound.Beep(frequency, duration)
+
+    # Initialize text-to-speech engine
+    engine = pyttsx3.init()
+    engine.say(f"New stock added: {symbol}")
+    engine.runAndWait()
 
 
 # Constants
 
 YAHOO_URL = "https://finance.yahoo.com/markets/stocks/trending/"
 
-CHECK_INTERVAL = 300  # 5 minutes in seconds
+CHECK_INTERVAL = 60  # 5 minutes in seconds
 
 
 # Initialize storage for previous tickers
@@ -27,18 +46,24 @@ new_tickers = set()
 # Streamlit setup
 
 st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
-
 st.title("🟢 Yahoo Finance Trending Stocks")
-
 st.markdown("<h2 style='text-align: center;'>Real-time Scrolling Stock Ticker</h2>", unsafe_allow_html=True)
-
-
 ticker_container = st.empty()
 
 
 def fetch_trending_stocks():
 
     """Fetch trending stock symbols from Yahoo Finance."""
+    r = requests.get(YAHOO_URL)
+    # print(r.content)
+    soup = BeautifulSoup(r.content, 'lxml')
+    table = soup.find_all('table')[0]
+    # Wrap the HTML content in StringIO
+    html_content = StringIO(str(table))
+    df = pd.read_html(html_content)
+
+    #print(df[0].to_json(orient='records'))
+    jdata = json.loads(df[0].to_json(orient='records'))
 
     response = requests.get(YAHOO_URL)
 
@@ -49,21 +74,11 @@ def fetch_trending_stocks():
     # Extract stock tickers
 
     tickers = set()
-
-    for symbol in soup.select('a.Fw(600)'):
-
-        tickers.add(symbol.text.strip())
-
-
+    for s in jdata:
+        tickers.add(s["Symbol"])
 
     return tickers
 
-
-def alert_user():
-
-    """Play a sound alert when a new stock is added."""
-
-    playsound('alert.mp3')
 
 
 def check_new_tickers():
@@ -86,7 +101,7 @@ def check_new_tickers():
 
             print(f"New stock added: {ticker}")
 
-            alert_user()  # Play sound alert
+            alert_user(ticker)  # Play sound alert
 
 
         # Update previous tickers for the next check
@@ -108,7 +123,7 @@ def display_tickers():
 
         ticker_container.markdown(
 
-            f"<marquee style='font-size:30px; color:green;'>{ticker_string}</marquee>",
+            f"<marquee style='font-size:80px; color:green;'>{ticker_string}</marquee>",
 
             unsafe_allow_html=True
 

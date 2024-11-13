@@ -6,13 +6,13 @@ import time
 
 import streamlit as st
 
-from playsound import playsound
+#from playsound import playsound
 
 # Constants
 
 FINVIZ_URL = "https://finviz.com/screener.ashx?v=111&s=ta_unusualvolume&f=sh_price_5to50%2Cta_change_u&o=-volume"
 
-CHECK_INTERVAL = 300  # 5 minutes in seconds
+CHECK_INTERVAL = 30  #300 5 minutes in seconds
 
 HEADERS = {'User-Agent': 'Mozilla/5.0'}
 
@@ -62,7 +62,7 @@ def fetch_finviz_tickers():
 def alert_user():
     """Play a sound alert when a new stock is added."""
 
-    playsound('alert.mp3')
+    #playsound('alert.mp3')
 
 
 def check_new_tickers():
